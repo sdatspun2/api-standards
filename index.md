@@ -1,7 +1,5 @@
----
-layout: master
-title: RESTful API Guidelines
----
+# API Design Guidelines
+
 
 # Introduction
 
@@ -366,7 +364,7 @@ These are headers defined or referenced from [HTTP/1.1 specification (RFC 7231)]
 | `Content-Type` | This request/response header indicates the media type of the request or response body. <br/><ul><li>API client MUST include with request if the request contains a body, e.g. it is a `POST`, `PUT`, or `PATCH` request.</li><li>API developer MUST include it with response if a response body is included (not used with `204` responses).</li><li>If the content is a text-based type, such as [JSON][30], the `Content-Type` MUST include a character-set parameter. The character-set MUST be UTF-8.</li><li>The only supported media type for now is `application/json`.</li></ul>Example:<pre>(in HTTP request)    Accept: application/json<br/>                     Accept-Charset: utf-8<br/>(in HTTP response)   Content-Type: application/json; charset=utf-8</pre> |
 | `Link` | According to [Web Linking RFC 5988](https://tools.ietf.org/html/rfc5988), a link is a typed connection between two resources that are identified by Internationalised Resource Identifiers (IRIs). The `Link` entity-header field provides a means for serializing one or more links in HTTP headers. <br><br> APIs SHOULD be built with a design assumption that neither an API, nor an API client's business logic should depend on information provided in the headers. Headers must only be used to carry cross-cutting concern information such as security, traceability, monitoring, etc. <br><br>Therefore, usage of the `Link` header is prohibited with response codes `201` or `3xx`. Consider using [HATEOAS links](#hypermedia) in the response body instead. |
 | `Location` | This response-header field is used to redirect the recipient to a location other than the Request-URI for completion of the request or identification of a new resource. <br><br>APIs SHOULD be built with a design assumption that neither an API, nor an API client's business logic should depend on information provided in the headers. Headers must only be used to carry cross-cutting concern information such as security, traceability, monitoring, etc. <br><br>Therefore, usage of the `Location` header is prohibited with response codes `201` or `3xx`. Consider using [HATEOAS links](#hypermedia) in response body instead. | 
-| `Prefer` | The [`Prefer`](https://tools.ietf.org/html/rfc7240) request header field is used to indicate that a particular server behavior(s) is `preferred` by the client but is not required for successful completion of the request. It is an `end to end` field and MUST be forwarded by a proxy if the request is forwarded unless `Prefer` is explicitly identified as being `hop by hop` using the `Connection` header field. Following token values are possible to use for APIs provided an API documentation explicitly indicates support for `Prefer`.<br><br>`respond-async`: API client prefers that API server processes its request asynchronously. <pre>Prefer: respond-async </pre> Server returns a `202 (Accepted)` response and processes the request asynchronously. API server could use a webhook to inform the client subsequently, or the client may call `GET` to get the response at a later time. Refer to [Asynchronous Operations](patterns.md#asynchronous-operations) for more details.<br/><br/>`read-consistent`: API client prefers that API server returns response from a durable store with consistent data. For APIs that are not offering any optimization preferences for their clients, this behavior would be the default and it would not require the client to set this token. <pre>Prefer: read-consistent</pre>`read-eventual-consistent`: API client prefers that API server returns response from either cache or presumably eventually consistent datastore if applicable. If there is a miss in finding the data from either of these two types of sources, the API server might return response from a consistent, durable datastore.<pre>Prefer: read-eventual-consistent</pre>`read-cache`: API client prefers that API server returns response from cache if available. If the cache hit is a miss, the server could return response from other sources such as eventual consistent datastore or a consistent, durable datastore.<pre>Prefer: read-cache</pre>`return=representation`: API client prefers that API server include an entity representing the current state of the resource in the response to a successful request. This preference is intended to provide a means of optimizing communication between the client and server by eliminating the need for a subsequent `GET` request to retrieve the current representation of the resource following a creation (`POST`) modification operation (`PUT` or `PATCH`).<pre>Prefer: return=representation</pre>|
+| `Prefer` | The [`Prefer`](https://tools.ietf.org/html/rfc7240) request header field is used to indicate that a particular server behavior(s) is `preferred` by the client but is not required for successful completion of the request. It is an `end to end` field and MUST be forwarded by a proxy if the request is forwarded unless `Prefer` is explicitly identified as being `hop by hop` using the `Connection` header field. Following token values are possible to use for APIs provided an API documentation explicitly indicates support for `Prefer`.<br><br>`respond-async`: API client prefers that API server processes its request asynchronously. <pre>Prefer: respond-async </pre> Server returns a `202 (Accepted)` response and processes the request asynchronously. API server could use a webhook to inform the client subsequently, or the client may call `GET` to get the response at a later time. Refer to [Asynchronous Operations](patterns.md#asynchronous-operations) for more details.<br/><br/>`read-consistent`: API client prefers that API server returns response from a durable store with consistent data. For APIs that are not offering any optimization preferences for their clients, this behavior would be the default and it would not require the client to set this token. <pre>Prefer: read-consistent</pre>`read-eventual-consistent`: API client prefers that API server returns response from either cache or presumably eventually consistent datastore if applicable. If there is a miss in finding the data from either of these two types of sources, the API server might return response from a consistent, durable datastore.<pre>Prefer: read-eventual-consistent</pre>`read-cache`: API client prefers that API server returns response from cache if available. If the cache hit is a miss, the server could return response from other sources such as eventual consistent datastore or a consistent, durable datastore.<pre>Prefer: read-cache</pre>`return=representation`: API client prefers that API server include an entity representing the current state of the resource in the response to a successful request. This preference is intended to provide a means of optimizing communication between the client and server by eliminating the need for a subsequent `GET` request to retrieve the current representation of the resource following a creation (`POST`) modification operation (`PUT` or `PATCH`).<pre>Prefer: return=representation</pre>`return=minimal`: API client indicates that the server returns only a minimal response to a successful request. The determination of what constitutes an appropriate "minimal" response is solely at the discretion of the server.<pre>Prefer: return=minimal</pre>|
 
 
 
@@ -482,6 +480,7 @@ Hypermedia, an extension of the term [hypertext](https://en.wikipedia.org/wiki/H
 
 In the context of RESTful APIs, a client could interact with a service entirely through hypermedia provided dynamically by the service. A hypermedia-driven service provides representation of resource(s) to its clients to navigate the API dynamically by including hypermedia links in the responses. This is different than other form of SOA, where servers and clients interact based on WSDL-based specification defined somewhere on the web or exchanged off-band.
 
+
 <h2 id="hateoas-api">Hypermedia Compliant API</h2>
 
 A hypermedia compliant API exposes a finite state machine of a service. Here, requests such as `DELETE`, `PATCH`, `POST` and `PUT` typically initiate a transition in state while responses indicate the change in the state. Lets take an example of an API that exposes a set of operations to manage a user account lifecycle and implements the HATEOAS interface constraint.
@@ -492,7 +491,7 @@ A client starts interaction with a service through a fixed URI `/users`. This fi
 
 ```
 
-POST /users
+POST https://api.foo.com/v1/customer/users
 
 {
     "given_name": "James",
@@ -517,6 +516,8 @@ The API creates a new user from the input and returns the following links to the
 ```
 
 {
+HTTP/1.1 201 CREATED
+Content-Type: application/json
 ...
 
 "links": [
@@ -532,12 +533,12 @@ The API creates a new user from the input and returns the following links to the
     },
     {
         "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-        "rel": "update",
+        "rel": "replace",
         "method": "PUT"
     },
     {
         "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-        "rel": "partial_update",
+        "rel": "edit",
         "method": "PATCH"
     }
 ]
@@ -545,7 +546,7 @@ The API creates a new user from the input and returns the following links to the
 }
 ```
 
-A long running client can store these links in its database for later use. 
+A client can store these links in its database for later use. 
 
 A client may then want to display a set of users and their details before the admin decides to delete one of the users. So the client does a `GET` to the same fixed URI `/users`.
 
@@ -554,11 +555,11 @@ A client may then want to display a set of users and their details before the ad
 **Request**:
 
 ```
-GET /users
+GET https://api.foo.com/v1/customer/users
 
 ```
 
-The API returns all the users in the system with `self` links
+The API returns all the users in the system with respective `self` links.
 
 **Response**:
 
@@ -593,8 +594,52 @@ The API returns all the users in the system with `self` links
 }
 
 ```
+The client MAY follow the `self` link of the user and figure out all the possible operations that it can perform on the user resource. 
 
-The client MAY follow the `self` link of the user to establish all the possible operations that it can perform on the user. For example, to delete the above created user, the client retrieves the URI of the link relation type `delete` from its data store and performs a delete operation on the URI.
+**Request**:
+
+```
+GET https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI
+```
+
+
+**Response**:
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+{
+        "given_name": "James",
+        "surname": "Greenwood",
+        ...
+        "links": [
+        {
+            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
+            "rel": "self",
+        
+        },
+        {
+            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
+            "rel": "delete",
+            "method": "DELETE"
+        },
+        {
+            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
+            "rel": "replace",
+            "method": "PUT"
+        },
+        {
+            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
+            "rel": "edit",
+            "method": "PATCH"
+        }
+
+
+}
+```
+
+
+To delete the user, the client retrieves the URI of the link relation type `delete` from its data store and performs a delete operation on the URI.
 
 **Request**:
 
@@ -602,14 +647,15 @@ The client MAY follow the `self` link of the user to establish all the possible 
 DELETE https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI
 ```
 
-In summary,
+In summary:
 
-* There's a well defined entry point for an API which a client navigates to all other resources.
-* The client does not need to build the logic of composing URIs to make different requests or code any kind of business rule by looking into the response details (more in detail is described in the later sections) that may be associated with URIs and state changes.
+* There is a well defined entry point for an API which a client navigates to in order to access all other resources.
+* The client does not need to build the logic of composing URIs to execute different requests or code any kind of business rule by looking into the response details (more in detail is described in the later sections) that may be associated with the URIs and state changes.
 * The client acknowledges the fact that the process of creating URIs belongs to the server.
-* Although implied, the client also treats URIs as opaque identifiers.
+* Client treats URIs as opaque identifiers.
+* APIs using hypermedia in representations could be extended seamlessly. As new methods are introduced, responses could be extended with relevant HATEOAS links. In this way, clients could take advantage of the functionality in incremental fashion. For example, if the API starts supporting a new `PATCH` operation then clients could use it to do partial updates.
 
-The mere presence of links does not decouple a client from having to learn the data required to make requests for a transition and all associated link semantics (particularly for `POST`/`PUT`/`PATCH` operations). An API MUST provide documentation to clearly describe all the links, link relation types and request response formats for each of the URIs.
+The mere presence of links does not decouple a client from having to learn the data required to make requests for a transition and all associated link semantics, particularly for `POST`/`PUT`/`PATCH` operations. An API MUST provide documentation to clearly describe all the links, link relation types and request response formats for each of the URIs.
 
 Subsequent sections provide more details about the structure of a link and what different relationship types mean.
 
@@ -740,16 +786,16 @@ When the semantics of a Link Relation Type defined in *[IANA's list of standardi
 |Link Relation Type | Description|
 |---------|------------|
 |`self`  | Conveys an identifier for the link's context. Usually a link pointing to the resource itself.|
+|`create` | Refers to a link that can be used to create a new resource.|
+|`edit` | Refers to editing (or partially updating) the representation identified by the link. Use this to represent a `PATCH` operation link.|
+|`delete` | Refers to deleting a resource identified by the link. Use this `Extended link relation type` to represent a `DELETE` operation link.|
+|`replace` | Refers to completely update (or replace) the representation identified by the link. Use this `Extended link relation type` to represent a `PUT` operation link.|
 |`first` | Refers to the first page of the result list.|
 |`last` | Refers to the last page of the result list provided `total_required` is specified as a query parameter.|
 |`next` | Refers to the next page of the result list.|
 |`prev` | Refers to the previous page of the result list.|
 |`collection` | Refers to a collections resource (e.g /v1/users).|
-|`create` | Refers to a link that can be used to create a new resource.|
-|`edit` | Refers to editing (or partially updating) the representation identified by the link. Use this to represent a `PATCH` operation link.|
-|`replace` | Refers to completely update (or replace) the representation identified by the link. Use this `Extended link relation type` to represent a `PUT` operation link.|
-|`alternate` | Refers to an alternate version of a resource. Use this to return the new major (e.g. v2) version of the same resource.|
-|`delete` | Refers to deleting a resource identified by the link. Use this `Extended link relation type` to represent a `DELETE` operation link.|
+|`latest-version` | Points to a resource containing the latest (e.g., current) version.|
 |`search` | Refers to a resource that can be used to search through the link's context and related resources.|
 |`up` | Refers to a parent resource in a hierarchy of resources.|
 
@@ -943,7 +989,7 @@ Sub-resources represent a relationship from one resource to another. The sub-res
 
 * The lifecycle of a resource identifier MUST be owned by the resource's domain model, where they can be guaranteed to uniquely identify a single resource. 
 * APIs MUST NOT use the database sequence number as the resource identifier.
-* A [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier), Hashed Id ([HMAC](https://en.wikipedia.org/wiki/Hash-based_message_authentication_code) based).
+* A [UUID](https://en.wikipedia.org/wiki/Universally_unique_identifier), Hashed Id ([HMAC](https://en.wikipedia.org/wiki/Hash-based_message_authentication_code) based) is preferred as a resource identifier.
 * For security and data integrity reasons all sub-resource IDs MUST be scoped within the parent resource only.<br />
 **Example:** `/users/1234/linked-accounts/ABCD`<br /> Even if account "ABCD" exists, it MUST NOT be returned unless it is linked to user: 1234.
 * Enumeration values can be used as sub-resource IDs. String representation of the enumeration value SHOULD be used.
@@ -998,12 +1044,19 @@ We would assume that [JSON Schema](http://json-schema.org/) is used to describe 
 
 <h2 id="api-contract-description">API Contract Description</h2>
 
-There are various options available to define the API's contract interface (API specification or API description). Examples are: [OpenAPI][11], [Google Discovery Document](https://developers.google.com/discovery/v1/reference/apis#method_discovery_apis_getRest), [RAML](http://raml.org/), [API BluePrint](#https://apiblueprint.org/) and so on. 
+There are various options available to define the API's contract interface (API specification or API description). Examples are: [OpenAPI (fka Swagger)][11], [Google Discovery Document](https://developers.google.com/discovery/v1/reference/apis#method_discovery_apis_getRest), [RAML](http://raml.org/), [API BluePrint](#https://apiblueprint.org/) and so on. 
 
-[OpenAPI][11] is a vendor neutral API description format. The OpenAPI [Schema Object][12] (or OpenAPI JSON) is based on the [draft-04][9] and uses a predefined subset of the draft-04 schema. In addition, there are extensions provided by the  specification to allow for more complete documentation. We have used OpenAPI wherever we need to describe the API specification throughout this document.
+[OpenAPI][11] is a vendor neutral API description format. The OpenAPI [Schema Object][12] (or OpenAPI JSON) is based on the [draft-04][9] and uses a predefined subset of the draft-04 schema. In addition, there are extensions provided by the  specification to allow for more complete documentation. 
+
+We have used OpenAPI wherever we need to describe the API specification throughout this document.
 
 
 <h2 id="schema">$schema</h2>
+
+**A note about using $schema with OpenAPI**
+
+As of writing this (Q12017), OpenAPI tools DO NOT recognize `$schema` value and (incorrectly) assume the value of $schema to be `http://swagger.io/v2/schema.json#` only. The following description applies to JSON schema (http://json-schema.org) used in API specification specified using specifications other than OpenAPI.
+
 
 Use [$schema](http://json-schema.org/latest/json-schema-core.html#anchor22) to indicate the version of JSON schema used by each JSON type you define as shown below.
 
@@ -1035,9 +1088,6 @@ In case your JSON type uses `links`, `media` and other such keywords or schemas 
 
 If you are unsure about the specific schema version to refer to, it would be safe to refer `http://json-schema.org/draft-04/hyper-schema#` schema since it would cover all aspects of any JSON schema.
 
-<h3 id="schema-openapi">A note about usage of $schema with OpenAPI (fka Swagger)</h3>
-
-As of writing this, OpenAPI tools DO NOT recognize `$schema` value for draft-04 and assume (incorrectly) the value of $schema to be `http://swagger.io/v2/schema.json#` only.
 
 
 
@@ -1442,39 +1492,27 @@ The following common types MUST be used with regard to global country, currency,
 
 When dealing with date and time, all APIs MUST conform to the following guidelines.
 
-* The date and time string MUST conform to the `date-time` universal format defined in section `5.6` of [RFC3339][21] (e.g `2016-09-28T13:30:41.000Z`). In use-cases where you would require only a subset of the fields (e.g `full-date` or `full-time`) from the RFC3339 `date-time` format, you SHOULD use the [Date Time Common Types](#date-common-types) to express these.
+* The date and time string MUST conform to the `date-time` universal format defined in section `5.6` of [RFC3339][21]. In use cases where you would require only a subset of the fields (e.g `full-date` or `full-time`) from the RFC3339 `date-time` format, you SHOULD use the [Date Time Common Types](#date-common-types) to express these.
 
 * All APIs MUST only emit [UTC](https://en.wikipedia.org/wiki/Coordinated_Universal_Time) time (aka [Zulu time](https://en.wikipedia.org/wiki/List_of_military_time_zones) or [GMT](https://en.wikipedia.org/wiki/Greenwich_Mean_Time)) in the responses.
 
 * When processing requests, an API SHOULD accept `date-time` or time fields that contain an offset from UTC. For example, `2016-09-28T18:30:41.000+05:00` SHOULD be accepted as equivalent to `2016-09-28T13:30:41.000Z`. This helps ensure compatibility with third parties who may not be capable of normalizing values to UTC before sending requests. In such cases the offset SHOULD only be used to calculate the equivalent UTC time before it is persisted in the system (because of known platform/language/DB interoperability issues). A UTC offset MUST NOT be used to derive anything else. 
 
-* If the business logic requires expressing the timezone of an event, it is RECOMMENDED that you capture the timezone explicitly by using a separate request/response field. You SHOULD NOT use offset to derive the timezone information. The offset alone is insufficient to accurately transform the stored UTC time back to a local time later. The reason; a UTC offset might be same for many geographical regions and based on the time of the year there may be additional factors such as daylight savings. For example, an offset UTC-05:00 represents Eastern Standard Time during winter, Central Dayight Time during summer, and year-round offset for Panama, Columbia, and Peru. 
+* If the business logic requires expressing the timezone of an event, it is RECOMMENDED that you capture the timezone explicitly by using a separate request/response field. You SHOULD NOT use offset to derive the timezone information. The offset alone is insufficient to accurately transform the stored UTC time back to a local time later. The reason is that a UTC offset might be same for many geographical regions and based on the time of the year there may be additional factors such as daylight savings. For example, an offset UTC-05:00 represents Eastern Standard Time during winter, Central Dayight Time during summer, and year-round offset for Panama, Columbia, and Peru. 
  
 * The timezone string MUST be per [IANA timezone database](https://www.iana.org/time-zones) (aka **Olson** database or **tzdata** or **zoneinfo** database), for example *America/Los_Angeles* for Pacific Time, or *Europe/Berlin* for Central European Time.
 
-* When expressing [floating](https://www.w3.org/International/wiki/FloatingTime) time values that are not tied to specific time zones such as user's date of birth, expiry date, publication date etc. in requests or responses, an API SHOULD NOT associate it with a timezone. The reason: a UTC offset changes the meaning of a floating time value. For examples, all countries with timezones west of prime meridian would consider a floating time value to be the previous day.
+* When expressing [floating](https://www.w3.org/International/wiki/FloatingTime) time values that are not tied to specific time zones such as user's date of birth, expiry date, publication date etc. in requests or responses, an API SHOULD NOT associate it with a timezone. The reason is that a UTC offset changes the meaning of a floating time value. For examples, all countries with timezones west of prime meridian would consider a floating time value to be the previous day.
 
 <h4 id="date-common-types">Date Time Common Types</h4>
 
 The following common types MUST be used to express various date-time formats:
 
-* [`date_time.json`](../v1/schema/json/draft-04/date_time.json) SHOULD be used to express an RFC3339 `date-time` value ( e.g `2016-09-28T13:30:41.000Z`).
-* [`date_no_time.json`](../v1/schema/json/draft-04/date_no_time.json) SHOULD be used to express a floating date value (e.g. `2016-09-28`. `full-date` from RFC 3339).
-* [`date_year_month.json`](../v1/schema/json/draft-04/date_year_month.json) SHOULD be used to express a floating date that contains only the **month** and **year** (e.g. `2016-09`. example usage: card expiry date).
-* [`time_zone.json`](../v1/schema/json/draft-04/time_zone.json) SHOULD be used for expressing timezone of a date with time field (e.g.`2016-09-28T13:30:41.000Z`) or a time only (e.g `13:30:41.000Z`) field. Example, "America/New_York".
-
-
-
-<h3 id="formats">Formats</h3> 
-
-| Type | Format | Examples |
-|------|-------|------------|
-| Datetime | `yyyy-mm-ddThh:mm:ss('.' s+)?Z` | `2009-01-31T06:34:45Z`<br/>`2009-01-31T13:59:45.569Z`<br/>`2009-01-01T00:00:00.000Z`<br/>`2009-12-31T23:59:59.999Z` |
-| Time | `hh:mm:ss('.' s+)?Z` | `06:34:45Z`<br/>`18:34:45Z`<br/>`59:45.569Z`<br/>`00:00:00.000Z`<br/>`23:59:59.999Z` |
-| Date| `yyyy-mm-dd` | `2009-01-31`<br/>`2009-01-01`<br/>`2009-12-31` |
-| Decimal | `(‘-‘)? D+ ‘.’ D+` </br>Where D denotes a digit from ‘0’ to ‘9’ | `-1.23`<br/>`12678967.543233`<br/>`0.33`<br/>`1.28`<br/>`0.0`<br/>`0.5`<br/>`1.0`<br>Not valid: `3`, `+3.3`, `.5`, `1.00`, `005.3` |
-| Integer | `(‘-‘)? D+` <br/>The same as decimal but without ‘.’ and the fraction digits. | `3`<br/>`0`<br/>`5678`<br/>`-427` |
-| Boolean | `true` `false` | `true`</br>`false`</br>Not valid: `True`, `faLse`, `0`, `1` |
+* [`date_time.json`](../v1/schema/json/draft-04/date_time.json) SHOULD be used to express an RFC3339 `date-time`.
+* [`date_no_time.json`](../v1/schema/json/draft-04/date_no_time.json) SHOULD be used to express `full-date` from RFC 3339.
+* [`time_nodate.json`](../v1/schema/json/draft-04/time_nodate.json) SHOULD be used to express `full-time` from RFC3339.
+* [`date_year_month.json`](../v1/schema/json/draft-04/date_year_month.json) SHOULD be used to express a floating date that contains only the **month** and **year**. For example, card expiry date (`2016-09`).
+* [`time_zone.json`](../v1/schema/json/draft-04/time_zone.json) SHOULD be used for expressing timezone of a RFC3339 `date-time` or a `full-time` field.
 
 
 <h1 id="error-handling">Error Handling</h1>

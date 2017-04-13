@@ -1,7 +1,6 @@
----
-layout: master
-title: Patterns And Use Cases
----
+
+# API Design Patterns And Use Cases
+
 
 This document lists various useful patterns for API design. We encourage API developers to consider the following patterns as a guide while designing APIs for services.
 
@@ -33,11 +32,11 @@ HTTP headers are written in camelCase + hyphenated syntax, e.g. Foo-Request-Id.
 		* [Response Properties](#response-properties)
 		* [Page Navigation](#page-navigation)
 * [Read Single Resource](#read-resource)
-    * [Returning Partial Representation](#partial-representation)
 * [Delete Single Resource](#delete-resource)
 * [Update Single Resource](#update-resource)
 	* [Partially Update Single Resource](#partial-update-resource)
 	* [JSON Pointer Expression](#json-pointer-expression)
+* [Projected Response](#projected-response)
 * [Sub-resource Collection](#sub-resource-collection)
 * [Sub-resource Singleton](#sub-resource-singleton)
 * [Idempotency](#idempotency)
@@ -52,24 +51,14 @@ HTTP headers are written in camelCase + hyphenated syntax, e.g. Foo-Request-Id.
 	* [Standalone Operation](#fileuploads-two-step)
 	* [As Attachment](#fileuploads-one-step)
 * [HATEOAS Use Cases](#hateoas-use-cases)
-    * [API Entry Point](#api-entry-point)
-    * [Consuming Links](#consuming-links)
     * [Navigating A Collection](#collection-links)
     * [Error Resolution](#error-links)
-    * [Complex Application Flows](#application-flows)
-    * [Coordinating Between Services](#coordination)
-    * [Piggyback Application State](#application-state)
-    * [Ephemeral URIs/One time URIs](#ephemeral-uris)
-    * [Conditional URIs](#conditional-uris)
-    * [Access Control](#access-control)
-    * [Search Operation](#search-operation)
-    * [Returning Links as URI templates](#uri-templates)
+    * [Service Controlled Flow](#service-controlled-flow)
     * [Asynchronous Operations](#asynchronous-operations)
-    * [Bandwidth Preservation](#hateoas-bandwidth)
-    * [Extensibility](#extensibility)
+    * [Saving Bandwidth](#saving-bandwidth)
 * [Bulk Operations](#bulk-operations)
-    * [Request Format](#bulk-request-format-homogeneous)
-    * [Response Format](#bulk-response-homogeneous)
+    * [Request Format](#bulk-request-format)
+    * [Response Format](#bulk-response)
     * [Replace and Update Operation](#bulk-other)
     * [HTTP Status Codes and Error Handling](#bulk-status-code) 
 * [Other Patterns](#other)
@@ -381,76 +370,18 @@ All identifiers for sensitive data should be non-sequential, and preferably non-
 ##### Example Response
 ```
 {
-	"merchant_customer_id": "merchant-1",
-        "merchant_id": "target",
-        "create_time": "2014-10-10T16:10:55Z",
-        "update_time": "2014-10-10T16:10:55Z",
-        "first_name": "Kartik",
-        "last_name": "Hattangadi"
+	 "merchant_customer_id": "merchant-1",
+    "merchant_id": "target",
+    "create_time": "2014-10-10T16:10:55Z",
+    "update_time": "2014-10-10T16:10:55Z",
+    "first_name": "Kartik",
+    "last_name": "Hattangadi"
 }
 ```
 
 #### HTTP Status
 
 If the provided resource identifier is not found, the response `404 Not Found` HTTP status should be returned (even with ’soft deleted’ records in data sources). Otherwise, `200 OK` HTTP status should be utilized when data is found.
-
-<h4 id="partial-representation">Returning Partial Representation</h4>
-
-
-An API typically responds with full representation of a resource after processing requests for methods such as `GET`, `POST` with `200 OK` and `PUT`/`PATCH` with `200 OK`. For efficiency, the client can ask the service to return only the fields it is interested in and get a partial representation instead.
-
-To request partial representation, a client can use the `fields` query parameter in the request to specify the fields it wants to be returned. For selecting multiple fields, a comma-separated list of fields SHOULD be used.
-
-The following example shows the use of the fields parameter with users API.
-
-**Request:** HTTP `GET` without `fields` parameter
-
-
-```
-GET https://api.foo.com/v1/users/bob
-Authorization: Bearer your_auth_token
-```
-
-**Response**: The complete resource representation is returned in the response.
-
-```
-{
-    "uid": "dbrown",
-    "given_name": "David",
-    "sn": "Brown",
-    "location": "Austin",
-    "department": "RISK",
-    "title": "Manager",
-    "manager": "ipivin",
-    "email": "dbrown@foo.com",
-    "employeeId": "234167"
-}
-```
-
-Partial Response with the `fields` query parameter.
-
-**Request:**
-
-```
-
-GET https://api.foo.com/v1/users/bob?fields=department,title,location
-Authorization: Bearer your_auth_token
-```
-
-The response has only fields specified by the `fields` query parameter.
-
-**Response:**
-
-```
-200 OK
-
-{
-    "department": "RISK",
-    "title": "Manager",
-    "location": "Austin",
-}
-```
-
 
 
 <h2 id="delete-resource">Delete Single Resource</h2>
@@ -608,54 +539,76 @@ It is not necessary that an API support the updating of all attributes via a `PA
  
 See [Sample Input Validation Error Response](index.md#sampleresponse-multi) for examples of error handling.
 
-<h4 id="patch_partial_responses">PATCH With Partial Responses</h4>
-
-When returning the complete representation of a resource for `200 OK` cases, the client can further reduce the size of the response by using the `fields` query parameter. Given below is an example request.
-
-
-**Example of a `PATCH` request that uses**`fields` **query param to reduce the response size**
-
-```
-PATCH https://api.foo.com/v1/users/bob?fields=department,title,location
-Authorization: Bearer API_auth_token
-Content-Type: application/json
-Prefer:return=representation
-
-[
-   {
-        "op": "replace",
-        "path": "/department",
-        "value": "ISM"
-    },
-   {
-        "op": "replace",
-        "path": "/title",
-        "value": "Senior Manager"
-    },
-    {
-        "op": "replace",
-        "path": "/location",
-        "value": "SanJose"
-    }
-]
-```
-
-The API responds with a `200 OK`  HTTP status code, and the partial representation of the updated resource.
-
-```
-200 OK
-ETag: “newETagString"
-
-{
-  "department": "ISM",
-  "title": "Senior Manager",
-  "location": "San Jose"
-}
-```
 
 <h4 id="patch_examples">PATCH Examples</h4>
 
 `PATCH` examples for modifying objects can be found in [RFC 6902][6].
+
+<h2 id="projected-response">Projected Response</h2>
+
+
+An API typically responds with full representation of a resource after processing requests for methods such as `GET`. For efficiency, the client can ask the service to return partial representation using [`Prefer: return=minimal`](index.md#http-standard-headers) HTTP header. Here, The determination of what constitutes an appropriate "minimal" response is solely at the discretion of the service. 
+
+To request partial representation with specific field(s), a client can use the `fields` query parameter. For selecting multiple fields, a comma-separated list of fields SHOULD be used.
+
+The following example shows the use of the fields parameter with users API.
+
+**Request:** HTTP `GET` without `fields` parameter
+
+
+```
+GET https://api.foo.com/v1/users/bob
+Authorization: Bearer your_auth_token
+```
+
+**Response**: The complete resource representation is returned in the response.
+
+```
+{
+    "uid": "dbrown",
+    "given_name": "David",
+    "sn": "Brown",
+    "location": "Austin",
+    "department": "RISK",
+    "title": "Manager",
+    "manager": "ipivin",
+    "email": "dbrown@foo.com",
+    "employeeId": "234167"
+}
+```
+
+### Projected response to GET with the `fields` query parameter.
+
+**Request:**
+
+```
+
+GET https://api.foo.com/v1/users/bob?fields=department,title,location
+Authorization: Bearer your_auth_token
+```
+
+The response has only fields specified by the `fields` query parameter as well as mandatory fields.
+
+**Response:**
+
+```
+200 OK
+
+{
+    "uid": "dbrown",
+    "department": "RISK",
+    "title": "Manager",
+    "location": "Austin"
+}
+```
+
+You could use the same pattern for Collection Resource as well as following.
+
+```
+GET https://api.foo.com/v1/users?fields=department,title,location
+```
+
+The response will have entries with the fields specified in request as well as mandatory fields.
 
 
 
@@ -798,7 +751,7 @@ The server, after checking that the call is identical to the first execution, MU
 Sample response:
 
 ```
-HTTP/1.1 200 CREATED
+HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
@@ -1136,7 +1089,7 @@ _The client first uploads the file using a file-upload URI provided by the servi
 
 POST /v1/identity/limit-resolution-files
 
-Content-Type: multipart/form-data; boundary=foo_bar_baz
+Content-Type: multipart/form-data; boundary=--foo_bar_baz
 Authorization: Bearer YOUR_ACCESS_TOKEN_HERE
 MIME-Version: 1.0
 
@@ -1167,7 +1120,7 @@ _If the file upload is successful, the server responds with the metadata of the 
 }      
 ```
 
-The client can use the uploaded file's URI (received in the above response) for any subsequent operation that requires the already uploaded file.
+The client can use the uploaded file's URI (received in the above response) for any subsequent operation that requires the uploaded file as shown below.
 
 **Example Request**
 
@@ -1187,9 +1140,9 @@ Authorization: Bearer oauth2_token
 
 <h4 id="fileuploads-one-step">As Attachment</h4>
 
-This option SHOULD be used if you have to combine the uploading of a file with an API request body or parameters in one API request (For the purpose of optimization or to process both the file upload and request data in an atomic manner).
+This option SHOULD be used if you have to combine the uploading of a file with an API request body or parameters in one API request (e.g. for the purpose of optimization or to process both the file upload and request data in an atomic manner).
 
-For such type use cases, the request SHOULD either be a `multipart/mixed` or a `multipart/related` ([RFC 2387](https://tools.ietf.org/html/rfc2387)) type. Given below is an example of such a request.
+For such use cases, the request SHOULD either use content-type `multipart/mixed` or `multipart/related` ([RFC 2387](https://tools.ietf.org/html/rfc2387)). Following is an example of such a request.
 
 **Example of a** `multipart/related` **request**:
 
@@ -1198,7 +1151,7 @@ _The first part in the below multipart request is the request metadata, while th
 ```
 POST /v1/identity/limits-resolutions
 Host: api.foo.com
-Content-Type: multipart/related; boundary=foo_bar_baz
+Content-Type: multipart/related; boundary=--foo_bar_baz
 Authorization: Bearer oauth2_token
 
 --foo_bar_baz
@@ -1219,101 +1172,39 @@ Content-Type: image/jpeg
 
 <h1 id="hateoas-use-cases">HATEOAS Use Cases</h1>
 
-This section describes various use cases where HATEOAS could be used.
+This section describes various use cases where HATEOAS could be used. 
 
-<h2 id="api-entry-point">API Entry Point</h2>
+As a guiding principle, every API SHOULD strive for a single entry point. Any response from this entry point will have [HATEOAS](index.md#hateoas) links using which the client can navigate to all other methods on the same resource or releated resources and sub-resources. Following are different patterns for defining such an API entry point. 
 
-Every API SHOULD strive for a single entry point. Any response from this entry point will then have [HATEOAS](index.md#hateoas) links, using which the client can navigate to all other methods on the same resource or releated resources and subresources. Given below are different patterns for defining such an API entry point. 
+<h4>Pattern 1: API with a top level entry point</h4>
 
-<h3>Pattern 1: APIs with a natural top level Entry Point</h3>
+For most APIs, there's a natural top level object or a collection which can be the resources addressed by the entry point. For example, the API defined in the previous section has a collection resource `/users` which can be the entry point URI.
 
-For most APIs there's a natural top level object or a collection which can be the resources addressed by the entry point. For example, the API defined in the previous section has a collection resource `/users` which can be the entry point URI.
-
-<h3>Pattern 2: Entry point in complex controller style operations</h3>
+<h4>Pattern 2: Entry point for complex controller style operations</h4>
 
 A complex multi step operation always has a logical entry point. For example, you want to build an API for a credit application process that involves multiple steps- a create application step, consumer consent step (to sign, agree to terms and conditions), an approval step- the last step of a successful credit application.
 
-* `/apply-credit` is the API's entry point. All other steps would be guided by the application create step in the from of links based on the captured data.For example a successful create application step would return the link to the next state of the application process `apply.sign`.
+* `/apply-credit` is the API's entry point. All other steps would be guided by the application create step in the from of links based on the captured data. For example a successful create application step would return the link to the next state of the application process `apply.sign`.
 * An unsuccessful (application with incorrect data) MAY return only a link to send only the incorrect/missing data (e.g `PATCH` link). 
 
-<h3>Pattern 3: An API without a natural top level entry point</h3>
 
-Consider an API that provides a set of independent controller style utility methods. For example, you want to build an identity API that provides the following utility methods
+<h4>Pattern 3: API without a top level entry point</h4>
+
+Consider an API that provides a set of independent controller style utility methods. For example, you want to build an identity API that provides the following utility methods.
 
    * generate OTP (one time password)
    * encrypt payload using a particular algorithm
    * decrypt the payload, link tokens
 
-For such cases, the API MAY provide a separate resource `/apis` to return links to all resources that can be served by this API.
+For such cases, the API MAY provide a separate resource `/actions` to return links to all resources that can be served by this API.
 
-`GET /apis` in the above example would return links to other api methods (`/generate-otp`,`/encrypt`,`/decrypt`,`/link-tokens`).
+`GET /actions` in the above example would return links to other api methods (`/generate-otp`,`/encrypt`,`/decrypt`,`/link-tokens`).
 
-
-<h2 id="consuming-links">Consuming Links</h2>
-
-Recipe 5.8 [RESTful Web Services Cookbook][4]
-
-A good example of a client that uses links is a web browser. The server presents to the browser a HTML with links. A user can browse the links immediately or can bookmark them for later use. A REST client should be implemented in the same way. Following are some of the rules that a client MAY follow.
-
-* When an API uses links to communicate its URIs in a representation, a client should take advantage of those links. The client should extract the links and store them (particularly the URIs and link relation types).
-* A client should make the flow decisions based on the presence or absence of links of known relation types.
-* Check the API documentation to understand the link relation types, request response format, authentication, supported media types.
-
-Now lets understand how clients should be implemented for the credit application API use case.
-
-* The client displays the credit application data collection page when the credit flow is triggered as a result of the consumer choosing to pay by credit. After the user finishes entering the data, the application form is submitted to the credit application API.
-* After the client receives the response for the above request it looks for the presence of the known link relation type `apply.sign` to check if the application is eligible and ready for the signing process. It also extracts other data from the response and stores them along with the `apply.sign` link.
-* When the user is ready to sign the application, the client then displays the user interface to the applicant to sign the credit card application. After the user completes the signing process (by clicking the submit button),the client submits the signing data to the `apply.sign` URI returned in the previous step.
-
-As part of the response to the request in the previous signing step, the client receives the terms-and-conditions for the credit application along with the `apply.complete` link. The client now extracts the terms-and-conditions details, displays the terms-and-conditions user interface when the user is ready to accept. After the users completes accepting terms-and-conditions (clicks on submit button), the clients submits the user's consent to the `apply.complete` link to complete the application process. The client then displays the user the available credit options that are returned in the API response.
-
-As you can see from above that the when the server uses links in the representation, the client acts like a browser and follows these links. Although this is cumbersome to implement, such approach decouples clients from the server in a way that allows the server functionality to evolve independently.
 
 <h2 id="collection-links">Navigating A Collection</h2>
 
-When returning an array or list of resources back to the client, you SHOULD provide links to each individual item in the list to facilitate navigation by the client apps. Please note, only the `"rel" : "self"` needs to be included for each item in the list, the other `rel`s can be returned once the client navigates to a specific item in the list.
 
-For instance, see how in the example below an array of billing plans are returned. Each billing plan xxxxxxxx and yyyyyyy then further has a self rel to navigate to the specific plan.
-
-```
-{
-    "total_items": "166",
-    "total_pages": "83",
-    "plans": [
-        {
-            "id": "xxxxxxxx",
-            "state": "ACTIVE",
-            "name": "t1",
-            "description": "Create Plan for Regular",
-            ...
-            "links": [
-                {
-                    "href": "https://api.foo.com/v1/payments/billing-plans/xxxxxxxx",
-                    "rel": "self"
-                }
-            ]
-        },
-        {
-            "id": "yyyyyyy",
-            "state": "ACTIVE",
-            "name": "t2",
-            "description": "Create Plan for Regular",
-            ...
-            "links": [
-                {
-                    "href": "https://api.foo.com/v1/payments/billing-plans/yyyyyyy",
-                    "rel": "self"
-                }
-        },
-            ...
-}
-
-```
-
-<h5 id="pagination">Pagination</h5>
-
-Details on HATEOAS links in the context of pagination is described in [Pagination and HATEOAS links](#page-navigation).
-
+For collection resources, a service MAY automatically provide paginated collection. Client can also specify its pagination preferences, if the query resultset is quite large. In such cases, the resultset is returned as a paginated collection with appropriate pagination related links. Client utilizes these links to navigate through the resultset back-and-forth. For more details on this linking pattern, please refer to [Pagination and HATEOAS links](#page-navigation).
 
 
 <h2 id="error-links">Error Resolution</h2>
@@ -1341,13 +1232,14 @@ The service, however, finds that the user account is currently not active. So it
 **Response**:
 
 ```
+HTTP/1.1 422 Unprocessable Entity
 {  
     "name":"INVALID_OPERATION",
     "debug_id":"123456789",
     "message":"update to an inactive account is not supported",
     "links": [
         {
-            "href": "https://uri.foo.com/v1/customer/partner-referrals/ALT-JFWXHGUV7VI/activate",
+            "href": "https://api.foo.com/v1/customer/partner-referrals/ALT-JFWXHGUV7VI/activate",
             "rel": "activate",
             "method": "POST"
         }
@@ -1358,446 +1250,97 @@ The service, however, finds that the user account is currently not active. So it
 
 The client can now prompt the user to first activate his account and then change his address details.
 
-<h2 id="application-flows">Complex Application Flows</h2>
+<h2 id="service-controlled-flow">Service-controlled Flow</h2>
 
-Recipe 5.5 [RESTful Web Services Cookbook][4]
+In a complex business operation that has one or more sub business operations and business rules govern the state transitions at run-time, using HATEOAS links to describe or emit the allowed state transitions prevents clients from embedding the service-specific business logic into their code. Loose coupling or no coupling with server's business logic enables better evolvability for both client and server.
 
-A complex business operation usually has multiple sub operations (aka steps) with business rules associated with each step. Consumers of such operations usually create unnecessary coupling with the API by coding even the business rules without the knowledge of the server. Such APIs become hard to maintain and extend as changes in the business rules break clients. Leveraging hypermedia links insuch cases reduces the complexity/coupling for clients.
+For example, an order can be cancelled when it is in a PENDING state. The order cannot be cancelled once it moves to a COMPLETED state. Following example shows how a service can use HATEOAS links to guide clients about next possible step(s) in business process.
 
-Lets analyze the the credit application process described in pattern 3 in the previous section. Following are the business rules
+<h3>Example: Pending Order</h3>
 
-* A credit card application is submitted and the application is evaluated using the provided details.
-* If the consumer, applying for credit is found eligible then the next step is to record the consumer's signature.
-* Once the signature is submitted, the consumer needs to agree to the credit terms and conditions.
-* After agreeing to terms and conditions, the consumer is shown all the credit products that he's eligible.
+Order is in PENDING state so the services returns the `cancel` HATEOAS link.
 
-Given the above business rules, you can implement a client for the credit application process. After each step,the client checks for business rules (the order of application process steps,the constraint in each step- e.g. if the country is UK then display the signing page) to see if it can move to the next step. This however introduces coupling between client and the API's business rules. Flow rules now become part of the API's public interface and the they can not be changed without breaking clients (e.g. If server changes the sequence of the application process (`apply.sign` comes before `apply.create`) or remove one of the intermediate steps).
- 
-The alternative here is to let the server provide the contextual links for possible next steps. Only when a particular link is present (e.g `apply.sign`), the client attempts a transition to the next step (e.g.`apply.complete`) When the link is absent, the client can assume that transition to next step is not possible. This prevents the client from having to learn and code the API flow.
-
-<h5>Example Scenario</h5>
-
-Lets now examine the credit application flow with the API implementing links
-
-As the first step the client submit the credit application data. If the consumer is eligible for the credit, the server checks the country the consumer belongs to and returns the `apply.sign` link. At this point there are no other links.
-
-**Request**:
+###### Request
 
 ```
+GET v1/checkout/orders/52181732T9513405D HTTP/1.1
+Host: api.foo.com
+Content-Type: application/json
+Authorization: Bearer oauth2_token
+```
 
-POST /v1/credit/credit-applications
+###### Response
 
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
 {
-    "name":"James Greenwood",
-    "resident_country":"UK",
-    "occupation":"employed",
-    ...
-   
-}
-
-```
-
-**Response**:
-
-```
-
-{
-    ...
-    "links": [
-        {
-            "href": "https://api.foo.com/v1/credit/credit-applications/GDYGLEJN-95-GHJEKE/sign",
-            "rel": "apply.sign",
-
-        }
-    ]
-
-}
-
-```
-
-The client then submits the server the consumer's digital signature by following "apply.sign" link. The server now returns the `apply.complete` link with terms and conditions to agree.
-
-**Request**:
-
-```
-
-POST /v1/credit/credit-applications/GDYGLEJN-95-GHJEKE/sign
-
-{
-    "name": "James Greenwood",
-    "resident_country": "UK",
-    "occupation": "employed",
-    ...
-    
-}
-
-```
-
-**Response**:
-
-```
-{
-
-"terms_conditions": {
-   ...
-}
-
-"links": [
-    {
-        "href": "https://api.foo.com/v1/credit/applications/GDYGLEJN-95-GHJEKE/complete",
-        "rel": "apply.complete",
-
-    }
-]
-
-}
-```
-
-The client then submits the terms and conditions user agreement to complete the application process.
-
-**Request**:
-
-```
-
-POST /v1/credit/credit-applications/GDYGLEJN-95-GHJEKE/complete
-
-{
-    "agreement_consent": "YES",
-    ...
-
-}
-
-```
-
-**Response**:
-
-```
-
-{
-
-  "eligible_products": {
-   ...
-  }
-
-
-}
-
-```
-
-In this manner the client is guided by the server through the credit application process without it implementing any of the flow logic.
-
-
-<h2 id="coordination">Coordinating Between Services</h2>
-
-Hypermedia links can be leveraged to coordinate actions/operations across services. Links can be leveraged to coordinate actions across the servers without any involvement of the client. Consider the following use case.
-
-A partner (bank) wants to onboard a consumer that it has direct relation with (in this case they have bank accounts/credit cards with the bank) to be able to associate his financial instruments with his account.
-
-As the first step the partner provides all the consumer data that it collected as part of its own relationship with the consumer by invoking the consumer prefill API. The service stores it in the DB for later use and returns the link to retrieve the consumer referral data and a link to onboard the consumer.
-
-**Request**:
-
-```
-
-POST /v1/customer/partner-referrals
-
-{
-    "customer_data": {
-    "person_details": {
+    "payment_details":{
         ...
     },
-    "business_detail": {
-        ...
-    },
-    ...
-
-    }
-
-}
-
-```
-
-**Response**:
-
-```
-{
-
-    "links": [
-    {
-        "href": "https://uri.foo.com/v1/customer/partner-referrals/ZjcyODU4ZWYtYTA1OC00OiRT0=",
-        "rel": "self",
-
-    },
-    {
-        "href": "https://www.foo.com/merchantsignup/partner/onboardingentry?token=ZjcyODU4ZWYtYTA1OC00OiRT0=",
-        "rel": "referral-onboarding",
-        "method": "GET"
-    }
-   ]
-
-}
-```
-
-
-The API client stores the above links in its DB. When the customer chooses to link his financial instruments, the partner client follows the on-boarding API link (`referral-onboarding`) returned in the previous step. The onboarding flow displays all the profile data it collected before and asks the consumer to fill the remaining data. The consumer then completes the rest of the form and submits for account linking.
-
-As you can see in the above use case, the interaction involves two separate services (Prefill and on-boarding) but its coordinated using links without client's involvement in the coordination process. The client here only follows the links.
-
-
-<h2 id="application-state">Piggyback Application State</h2>
-
-Recipe 1.3 [RESTful Web Services Cookbook][4]
-
-HTTP is a stateless protocol which means it doesn't maintain the previous state of the client so every request is treated like a new request. While this paradigm works for the majority of the use cases, in rare times an API needs to maintain the client's state. Consider the following use cases:
-
-An API call that involves multiple APIs in a call chain and requires the client state to be carried across API hops. The first leg of the API call in this case stores the client's state in the database or shared cache (when the state is temporary and required for the duration until the flow is complete) and passes the links (all supported resource links such as retrieval and update) to that resource to the next API in the processing order. 
-
-The server in this case returns a link that contains the key to the underlying data store.
-
-```
-{
-    ...
-    "links": [
+    "status":"PENDING",
+    "links":[
         {
-            "href": "href": "https://uri.foo.com/v1/payments/deferred-payments?payment_token=34GGH-4KN",
-            "rel": "self"
-        }
-    ]
-
-}
-```
-
-
-An API needs to maintain the client state in one or more subsequent calls. The API in this case returns a link that encodes the URI to include the state information or a link that has a reference to its state in a persistent store via the URI identifier. The client follows the link here to make the subsequent API call so its state is maintained across calls.
-
-The server here returns an URI carrying the complete client state
-
-```
-
-{
-    ...
-    "links": [
-        {
-            "href": "https://uri.foo.com/v1/payments/deferred-payments?channel=WEB&auth_type=payerid&attribution=BT&...",
-            "rel": "self"
-        }
-    ]
-
-}
-
-```
-
-
-<h2 id="ephemeral-uris">Ephemeral URIs/One time URIs</h2>
-
-Section 5.6 [RESTful Web Services Cookbook][4]
-
-Contrary to the general notion of URI permanence in Web, there are often scenarios where short lived URIs are required. For such use cases, an API can use links to communicate the temporary URIs. Some of the examples where temporary URI needed are:
-
-* An API that returns a security token to its client which is valid for a certain duration and can be used to perform a restricted operation.
-* As part of user registration, you need to confirm the email address of the user by sending a one time password to user's mail address. The user is then required to follow the link to enter the temporary password to complete the registration.
-
-**Sample Request**:
-
-User submits the complete details to register himself
-
-```
-
-POST v1/users
-
-{
-    ...
-
-}
-```
-
-The server responds with a temporary link and and sends an one time security token to user's email id.
-
-**Sample Response**:
-
-```
-
-{
-
-    "links": [
-        {
-            "href": "https://uri.foo.com/v1/users/ZjcyODU4ZWYtYTA1OC00OiRT0/confirm",
-            "rel": "confirm"
-        }
-    ]
-}
-
-```
-
-The user now follows (clicks) the link and enters the one time token in the form to complete the registration.
-
-**Note:** When using ephemeral URIs, an API should clearly document its a temporary URI, the validity of such URI, any associated constraints and what a client need to do upon its expiration.
-
-<h2 id="conditional-uris">Conditional URIs</h2>
-
-Conditional URIs are useful if you want to execute a particular operation based on a set of constraints around the previous resource state of the user. An API can communicate such conditional URIs using links. Conditional URIs are special types of ephemeral URIs. One such example where a conditional URI can be used is, a payment network (e.g. VISA) obtains realtime payment authorization from the issuer's bank. The payment network then stores the link returned by the issuer's bank API and later uses it to settle the Interchange for the transaction.
-
-
-<h2 id="access-control">Access Control</h2>
-
-Systems implement access control in various ways depending on a target use case they address. In an identity-centric application, access to each functionality/feature is controlled via the type of user or a role the user assigned to. In a product-centric system, product capabilities follow a layered approach with each layer representing a particular product type. User actions (what a particular user can do) for such systems are controlled by assigning the users to a product layer. For example, a business account may have access to only a subset of product product capabilities while  a Premier account will have access to all the capabilities). For such systems, the server can use HATEOAS links to inform the client the allowed user actions based on the policy decisions in the server side.
-
-Consider an example of a user management system (`/users` API). Access to this system is modeled via user tiering (normal user, power user etc.). 
-
-When a normal user logs on the system, the server returns a self link for complete user data and a link to edit the user details. 
-
-```
-{
-    ...
-
-    "links": [
-        {
-            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-            "rel": "self"
-
-        },
-        {
-            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-            "rel": "update",
-            "method": "PUT"
-        },
-        {
-            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-            "rel": "partial_update",
-            "method": "PATCH"
-        }
-    ]
-
-}
-
-
-```
-
-When a power user (e.g admin) logs on to the system the server returns an additional `delete` link. Here the server policy decision allows a delete action only for a power user.
-
-```
-{
-    ...
-
-    "links": [
-        {
-            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
             "rel": "self",
-
+            "href": "https://api.foo.com/v1/checkout/orders/19S86694A9334040A",
+            "method": "GET"
         },
         {
-            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-            "rel": "delete",
-            "method": "DELETE"
-        },
-        {
-            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-            "rel": "update",
-            "method": "PUT"
-        },
-        {
-            "href": "https://api.foo.com/v1/customer/users/ALT-JFWXHGUV7VI",
-            "rel": "partial_update",
-            "method": "PATCH"
+            "rel": "cancel",
+            "href": "https://api.foo.com/v1/checkout/orders/19S86694A9334040A/cancel",
+            "method": "POST"
         }
-    ]
-
+     ]
 }
-
 ```
 
-Another example could be that incase of Partner having multiple accounts (one master account and several child accounts) an API can use context sensitive HATEOAS links to inform the client about the possible user actions based on the type of account (master or child) logged into the system.
+<h3>Example: Completed Order</h3>
 
-<h2 id="search-operation">Search Operation</h2>
+Order is in COMPLETED state so the services does not return the `cancel` link anymore.
 
-Sometime search operations require a large set of filters which makes the URI exceed the max URI limit imposed by many browsers (usually 2083 characters) and web servers (typically a limit of 8192 bytes). To overcome the length limitation, APIs provide a search operation using the HTTP `POST` method instead of a `GET`.
-
-However, given that a search operation is safe and idempotent, using HTTP `POST` is a misuse of HTTP semantics. A further consequence to this is the loss of cache-ability. The following pattern can be applied to overcome the `POST` limitation and misuse.
-
-A client submits all the query inputs using `POST`. The server responds to the `POST` request with a link to the search query.
-
-**Request**:
+###### Request
 
 ```
+GET v1/checkout/orders/52181732T9513405D HTTP/1.1
+Host: api.foo.com
+Content-Type: application/json
+Authorization: Bearer oauth2_token
+```
 
-POST /reporting/queries
+###### Response
 
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
 {
-    "status": "ACTIVE",
-    "family": "payments",
-    "sub_family": "pos",
-    ...
-    
-}
-
-```
-
-**Response**:
-
-```
-
-{
-
-"links": [
-    {
-        "href": "https://api.foo.com/v1/reporting/queries/GDYGLEJN-95-GHJEKE",
-        "rel": "self",
-
+    "payment_details":{
+        ...
     },
-    {
-        "href": "https://api.foo.com/v1/reporting/reports?query_id=GDYGLEJN-95-GHJEKE",
-        "rel": "execute",
-
-    }
-]
-
+    "status":"COMPLETED",
+    "links":[
+        {
+            "rel": "self",
+            "href": "https://api.foo.com/v1/checkout/orders/19S86694A9334040A",
+            "method": "GET"
+        }
+     ]
 }
+```     
+     
+Note: The service MAY decide to support cancellation of orders (for orders with COMPLETED status) in some countries in future but that does not require the client to change anything in its code. All that a client knows or has coded when it first integrated with the service is the request body that is required to `cancel` an order.
 
-```
-
-
-The client submits a `GET` request to the search link URI returned in the above step.
-
-```
-GET https://api.foo.com/v1/reporting/reports?query_id=GDYGLEJN-95-GHJEKE
-```
-
-
-<h2 id="uri-templates">Returning Links As URI Templates</h2>
-
-For scenarios where a server does not have all the information to construct a link, it can return URI templates as links. Clients would do the substitution before making a request.
-
-For example, consider a search API that supports clients to search by various keywords, the server here can return the following link, 
-
-```
-https://api.foo.com/v1/customer/charities?keywords={comma_separated_keywords}
-```
-
-A client of the API can then do the appropriate substitution while issuing a search request 
-
-```
-https://api.foo.com/v1/customer/charities?keywords=business,ca`
-```
-
-
-**Note:** URI templates are opaque in nature so the API returning URI templates in a representation should clearly document all possible values for the opaque elements.
 
 
 <h2 id="hateoas-asynchronous-operations">Asynchronous Operations</h2>
 
-Details Asynchronous operations and returning appropriate links are described in [Asynchronous Operations](#asynchronous-operations).
+When an operation is carried out asynchronously, it is important to provide relevant links to client so that the client can find out more details about the operation such as finding out status or perform get, update and delete operations. Please refer to [Asynchronous Operations](#asynchronous-operations) to find how the HATEOAS links could be used in response of an asynchronous operation.
 
 
-<h2 id="hateoas-bandwidth">Bandwidth Preservation</h2>
+<h2 id="saving-bandwidth">Saving Bandwidth</h2>
 
-Some services always return very large response because of the nature of the domain they address. APIs of such services are sometimes referred as `Composite` APIs (they accumulate data from various sources or an aggregate of more than one services). For such APIs, sending the entire response drastically impacts performance of the API consumer, API server and the underlying network. A service in this case only sends the HATEOAS links in the representation with minimal data to improve the performance. This pattern, if followed in general, often leads to chatty interactions. The term "chatty" does not always apply to such use cases. 
-
-For example, consider a use case of creating a massive tenant  with thousands of virtual machines (VM). The API server here has to orchestrate several tasks that comprises of massive metadata (compute metadata, OS image metadata, nåetwork metadata, storage metadata and so on). Any small change may also lead to a series of other changes and changes in the metadata. The API caller also in such use cases consume information in a piecemeal fashion (usually dashboards or API clients that has a specific interest e.g. An API client that is interested only in the VM details). Returning the entire response is not useful for that matter as depending on the data that is of interest, the client later follows the appropriate links in the representation.
+Some services always return very large response because of the nature of the domain they address. APIs of such services are sometimes referred as `Composite` APIs (they accumulate data from various sources or an aggregate of more than one services). For such APIs, sending the entire response drastically impacts performance of the API consumer, API server and the underlying network. In such cases, the client can ask the service to return partial representation using [`Prefer: return=minimal`](index.md#http-standard-headers) HTTP header. A service could send response with relevant HATEOAS links with minimal data to improve the performance. 
 
 
-<h2 id="extensibility">Extensibility</h2>
-
-APIs using HATEOAS links in representations could be extended seamlessly. As new methods are introduced in incremental fashion, responses could be extended with more HATEOAS links. As and when a new API method is introduced, a new link relation type is added to responses. In this way, clients could take advantage of the functionality gradually, e.g. if the API supports a new `PATCH` operations then clients that support `PATCH` can take advantage of this operation to do a partial update.
 
 
 <h1 id="bulk-operations">Bulk Operations</h1>
@@ -1808,11 +1351,11 @@ This section describes guidelines for handling bulk calls in APIs. There are two
 
 * **Heterogeneous:** operation involves a request and response payloads that contain one or more requests and reponse payloads respectively. Each nested request and response represents an operation on a specific type of resource. However, the container request and response have one or more operations operating on one or more types of resources. It is recommended to use a public domain standard such as *[OData Batch Specification] [1]* in such cases.
 
-This section only addresses bulk processing of payloads using the JSON content type of the homogenous method.
+This section only addresses bulk processing of payloads using the homogenous method.
 
 
 
-<h2 id="bulk-request-format-homogeneous">Request Format</h2>
+<h2 id="bulk-request-format">Request Format</h2>
 
 Each bulk request is a single HTTP request to one target API endpoint. This example illustrates a bulk add operation. 
 
@@ -1856,7 +1399,7 @@ Content-Length: total_content_length
 ```
 
 
-<h2 id="bulk-response-homogeneous">Response Format</h2>
+<h2 id="bulk-response">Response Format</h2>
 
 The response usually contains the status of each item. Failure of an individual item is described using *[Error Handling Guidelines](index.md#sampleresponse-bulk)* for an individual item. Given below is such an example.
 
@@ -1933,11 +1476,9 @@ HTTP/1.1 400 Bad Request
 
 <h2 id="bulk-other">Replace And Update</h2>
 
-Similar to the bulk add, a service can support bulk replace operations using HTTP `PUT` and bulk update operations using `PATCH`.
+Similar to bulk add, a service can support bulk update operation (replace using HTTP `PUT` or partial update using `PATCH`). This is possible provided the bulk add request also creates a first-class resource (e.g. a batch resource) that is uniquely identifiable using an id and returned to the client. The subsequent update operations could then use this id and perform updates on constituent elements of the batch as if an update is performed on a single resource. 
 
-For bulk replace and bulk update operations, every effort should be made to make the execution atomic (all or nothing semantics). When it is not possible to make it so, the response should be similar to the partial response of bulk add operation described in the previous section.
-
-For bulk update operations, it is possible that the JSON `PATCH` operation described by `op` is different for each homogeneous item.
+For bulk replace and update operations, every effort should be made to make the execution atomic (all or nothing semantics). When it is not possible to make it so, the response should be similar to the partial response of bulk add operation described in the previous section. 
 
 
 <h2 id="bulk-status-code">HTTP Status Codes And Error Handling</h2>
