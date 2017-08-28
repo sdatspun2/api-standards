@@ -442,7 +442,7 @@ All REST APIs MUST use only the following status codes. Status codes in **`BOLD`
 For each HTTP method, API developers SHOULD use only status codes marked as "X"  in this table. If an API needs to return any of the status codes marked with an **`X`**, then the use case SHOULD be reviewed as part of API design review process and maturity level assessment. Most of these status codes are used to support very rare use cases.
 
 | Status Code | 200 Success | 201 Created |202 Accepted | 204 No Content | 400 Bad Request |  404 Not Found |422 Unprocessable Entity | 500 Internal Server Error |
-|-------------|:--------------|:--------------|:--------------|:--------------|:-----------------|:------------------|:----------------|:----------------|:----------------------------|
+|-------------|:--------------|:--------------|:--------------|:--------------|:-----------------|:------------------|:----------------|:----------------|
 | `GET`       | X         |               |               |                  | X             | X              | **`X`**           | X                       |
 | `POST`      | X         | X         | **`X`**           |                 |  X             | **`X`**              | **`X`**               | X                       |
 | `PUT`       | X             |               | **`X`**           | X           | X             | X              | **`X`**           | X                       |
