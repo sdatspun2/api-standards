@@ -83,7 +83,7 @@ Once the `POST` has successfully completed, a new resource will be created. Hype
 Note that server-generated values are not provided in the request.
 
 ```
-POST /vault/credit-cards
+POST /v1/vault/credit-cards
 {
     "payer_id": "user12345",
     "type": "visa",
