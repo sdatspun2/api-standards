@@ -19,11 +19,8 @@ HTTP headers are written in camelCase + hyphenated syntax, e.g. Foo-Request-Id.
 
 ### Contributors
 
-<<<<<<< HEAD
-[Sanjay Dalal](https://www.linkedin.com/in/sanjaydalal) (PayPal API Platform), [Jason Harmon](https://es.linkedin.com/in/jasonhnaustin) (former member: PayPal API Platform), [Jayadeba Jena](https://www.linkedin.com/in/jayadeba-jena-1a6a0020) (PayPal API Platform), [Nikhil Kolekar](https://www.linkedin.com/in/nikhil-kolekar-28627a2/) (PayPal API Platform), [Gagan Maheshwari](https://www.linkedin.com/in/gaganmaheshwari) (former member: PayPal API Platform), [George Petkov](https://www.linkedin.com/in/gbpetkov) (former member: PayPal API Platform) and Andrew Todd (PayPal Credit).
-=======
 [Sanjay Dalal](https://www.linkedin.com/in/sanjaydalal) (former member: PayPal API Platform), [Jason Harmon](https://es.linkedin.com/in/jasonhnaustin) (former member: PayPal API Platform), [Jayadeba Jena](https://www.linkedin.com/in/jayadeba-jena-1a6a0020) (PayPal API Platform), [Nikhil Kolekar](https://www.linkedin.com/in/nikhil-kolekar-28627a2/) (PayPal API Platform), [Gagan Maheshwari](https://www.linkedin.com/in/gaganmaheshwari) (former member: PayPal API Platform), [George Petkov](https://www.linkedin.com/in/gbpetkov) (former member: PayPal API Platform) and Andrew Todd (PayPal Credit).
->>>>>>> upstream/master
+
 
 # Table Of Contents
 
@@ -86,7 +83,7 @@ Once the `POST` has successfully completed, a new resource will be created. Hype
 Note that server-generated values are not provided in the request.
 
 ```
-POST /v1/vault/credit-cards
+POST /vault/credit-cards
 {
     "payer_id": "user12345",
     "type": "visa",
@@ -1596,7 +1593,7 @@ Designers of new services SHOULD refer to the [_RESTful Web Services Cookbook_][
 
 
 [1]: http://www.odata.org/documentation/odata-version-3-0/batch-processing/ "OData Batch Specification"
-[2]: ../v1/schema/json/draft-04/error.json "error.json"
+[2]: v1/schema/json/draft-04/error.json "error.json"
 [3]: https://tools.ietf.org/html/rfc6901 "JSON Pointer"
 [4]: http://techbus.safaribooksonline.com/book/web-development/web-services/9780596809140 "RESTful Web Services Cookbook"
 [5]: https://www.w3.org/TR/NOTE-datetime "ISO 8601 Date and Time Formats"
