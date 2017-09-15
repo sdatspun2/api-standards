@@ -1,6 +1,5 @@
 # API Design Guidelines
 
-
 # Introduction
 
 The PayPal platform is a collection of reusable services that encapsulate well-defined business capabilities. Developers are encouraged to access these capabilities through Application Programming Interfaces (APIs) that enable consistent design patterns and principles. This facilitates a great developer experience and the ability to quickly compose complex business processes by combining multiple, complementary capabilities as building blocks.
@@ -250,7 +249,7 @@ This principle implies the following:
 
 <strong>Services must be easy to use and compose in consumers (and applications).</strong>
 
-A service that is difficult and time consuming to use reduces the benefits of a microservices architecture by encouraging consumers to find alternate mechanisms to access the same functionality. Composability means that services can be combined easily because the service contracts and access protocols are consistent, and each service contract does not have to be understood differently. 
+A service that is difficult and time consuming to use reduces the benefits of a microservices architecture by encouraging consumers to find alternate mechanisms to access the same functionality. Composability means that services can be combined easily because the service contracts and access protocols are consistent, and each service contract does not have to be understood differently. 
 
 This principle implies the following:
 
@@ -1192,7 +1191,7 @@ The `allOf` keyword MUST only be used for the purposes listed here.
 The `allOf` keyword in JSON Schema SHOULD be used for extending objects. In draft-03, this was implemented with the `extends` keyword, which has been deprecated in draft-04. 
 
 ##### Example
-A common need is to extend a common type with additional fields. In this example, we will extend the [address](../v1/schema/json/draft-04/address_portable.json) with a `type` field.
+A common need is to extend a common type with additional fields. In this example, we will extend the [address](v1/schema/json/draft-04/address_portable.json) with a `type` field.
 
 ```
 "shipping_address": { "$ref": "v1/schema/json/draft-04/address_portable.json" }
@@ -1464,7 +1463,7 @@ Money is a standard type to represent amounts. The Common Type [`money.json`][5]
 
 Percentages and interest rates are very common when dealing with money. One of the most common examples is annual percentage rate, or APR. These interest rates SHOULD always be represented according to the following rules:
 
-* The  Common Type [`percentage.json`](../v1/schema/json/draft-04/percentage.json) MUST be used. This ensures that the rate is represented as a fixed-point decimal.
+* The  Common Type [`percentage.json`](v1/schema/json/draft-04/percentage.json) MUST be used. This ensures that the rate is represented as a fixed-point decimal.
     * All validation rules defined in the type MUST be followed.
 * The value MUST be represented as a percentage.
     * **Example:** if the interest rate is 19.99%, the value returned by the API MUST be `19.99`.
@@ -1476,15 +1475,15 @@ Percentages and interest rates are very common when dealing with money. One of t
 
 The following common types MUST be used with regard to global country, currency, language and locale.
 
-* [`country_code`](../v1/schema/json/draft-04/country_code.json)
+* [`country_code`](v1/schema/json/draft-04/country_code.json)
   * All APIs and services MUST use the [ISO 3166-1 alpha-2](http://www.iso.org/iso/country_codes.htm) two letter country code standard.
-* [`currency_code`](../v1/schema/json/draft-04/currency_code.json)
+* [`currency_code`](v1/schema/json/draft-04/currency_code.json)
   * Currency type MUST use the three letter currency code as defined in [ISO 4217](http://www.currency-iso.org/). For quick reference on currency codes, see [http://en.wikipedia.org/wiki/ISO_4217](http://en.wikipedia.org/wiki/ISO_4217).
-* [`language.json`](../v1/schema/json/draft-04/language.json)
+* [`language.json`](v1/schema/json/draft-04/language.json)
  	* Language type uses [BCP-47](https://tools.ietf.org/html/bcp47) language tag.
-* [`locale.json`](../v1/schema/json/draft-04/locale.json)
+* [`locale.json`](v1/schema/json/draft-04/locale.json)
  	* Locale type defines the concept of locale, which is composed of `country_code` and `language`. Optionally, IANA timezone can be included to further define the locale.
-* [`province.json`](../v1/schema/json/draft-04/province.json) 
+* [`province.json`](v1/schema/json/draft-04/province.json) 
     * Province type provides detailed definition of province or state, based on [ISO-3166-2](https://en.wikipedia.org/wiki/ISO_3166-2) country subdivisions, with room for variant local, international, and abbreviated representations of province names. Useful for logistics, statistics, and building state pull-downs for on-boarding.
 
 
@@ -1508,11 +1507,11 @@ When dealing with date and time, all APIs MUST conform to the following guidelin
 
 The following common types MUST be used to express various date-time formats:
 
-* [`date_time.json`](../v1/schema/json/draft-04/date_time.json) SHOULD be used to express an RFC3339 `date-time`.
-* [`date_no_time.json`](../v1/schema/json/draft-04/date_no_time.json) SHOULD be used to express `full-date` from RFC 3339.
-* [`time_nodate.json`](../v1/schema/json/draft-04/time_nodate.json) SHOULD be used to express `full-time` from RFC3339.
-* [`date_year_month.json`](../v1/schema/json/draft-04/date_year_month.json) SHOULD be used to express a floating date that contains only the **month** and **year**. For example, card expiry date (`2016-09`).
-* [`time_zone.json`](../v1/schema/json/draft-04/time_zone.json) SHOULD be used for expressing timezone of a RFC3339 `date-time` or a `full-time` field.
+* [`date_time.json`](v1/schema/json/draft-04/date_time.json) SHOULD be used to express an RFC3339 `date-time`.
+* [`date_no_time.json`](v1/schema/json/draft-04/date_no_time.json) SHOULD be used to express `full-date` from RFC 3339.
+* [`time_nodate.json`](v1/schema/json/draft-04/time_nodate.json) SHOULD be used to express `full-time` from RFC3339.
+* [`date_year_month.json`](v1/schema/json/draft-04/date_year_month.json) SHOULD be used to express a floating date that contains only the **month** and **year**. For example, card expiry date (`2016-09`).
+* [`time_zone.json`](v1/schema/json/draft-04/time_zone.json) SHOULD be used for expressing timezone of a RFC3339 `date-time` or a `full-time` field.
 
 
 <h1 id="error-handling">Error Handling</h1>
@@ -2468,7 +2467,3 @@ Please refer to [Patterns And Use Cases](patterns.md).
 [28]: v1/schema/json/draft-04/error_details.json "error_details.json"
 [29]: http://techbus.safaribooksonline.com/book/web-development/web-services/9780596809140 "RESTful Web Services Cookbook"
 [30]: http://json.org/ "JSON"
-
-
-
-
