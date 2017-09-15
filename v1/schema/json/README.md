@@ -1,17 +1,10 @@
 # Common Types
 
 
-<<<<<<< HEAD
-Please refer to [documentation](../../../docs/common-json-types.md#common) to find more details about Common Types. For more details on the address type refer to [README](README_address.md) dedicated to the type.
-
-
-#### Extend Common Type (if needed)
-=======
 Please refer to [documentation](../../../api-style-guide.md#common-types) to find more details about Common Types. For more details on the address type refer to [README](README_address.md) dedicated to the type.
 
 
 #### Extend Common Types (if needed)
->>>>>>> upstream/master
 
 API developers are encouraged to use Common Types as-is. However, in cases where you need to extend a type, there are multiple ways to achieve this as described below. Note that each of the following approach comes with its own trade-off.
 
